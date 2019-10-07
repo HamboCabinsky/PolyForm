@@ -1,5 +1,34 @@
+from tkinter import filedialog
 from tkinter import *
 from tkinter import ttk
+from PIL import Image, ImageDraw, ImageTk
+
+colorTranslator = {
+                    "red" : (255, 0, 0),
+                    "orange" : (255, 165, 0),
+                    "yellow" : (255, 255, 0),
+                    "green" : (0, 255, 0),
+                    "blue" : (0, 0, 255),
+                    "purple" : (160, 32, 240),
+                    "white smoke" : (245, 245, 245),
+                    "lavender" : (230, 230, 250),
+                    "midnight blue" : (25, 25, 112),
+                    "saddle brown" : (139, 69, 19),
+                    "pink" : (255, 192, 203),
+                    "firebrick" : (178, 34, 34),
+                    "VioletRed" : (208, 32, 144),
+                    "thistle3" : (205, 181, 205),
+                    "cyan" : (0, 255, 255),
+                    "goldenrod2" : (238, 180, 34),
+                    "yellow green" : (154, 205, 50),
+                    "steel blue" : (70, 130, 180),
+                    "brown" : (165, 42, 42),
+                    "sandy brown" : (244, 164, 96),
+                    "HotPink2" : (238, 106, 167),
+                    "DarkOrange" : (255, 140, 0),
+                    "NavajoWhite4" : (139, 121, 94),
+                    "black" : (0, 0, 0)
+                    }
 
 class Display(Canvas):
     '''
@@ -68,6 +97,24 @@ class Display(Canvas):
             if self.type(sel) == "polygon":
                 self.selected[sel].move(move_dir[0], move_dir[1])
 
+    def addbgImage(self):
+        filenm = filedialog.askopenfilename(filetypes=(("All","*.*"),("png","*.png"),("gif",".gif"),("jpg",".jpg")))
+        if filenm:
+            self.img = ImageTk.PhotoImage(file=filenm)
+            self.bgImage = self.create_image(0,0,image=self.img,anchor=NW)
+            self.lower(self.bgImage)
+
+    def export_image(self):
+        filenm = filedialog.asksaveasfilename(initialdir = "/", title = "select file", filetypes = (("png","*.png"),("add files","*.*")))
+        img = Image.new("RGBA", (self.width, self.height), color = (0,0,0,0))
+        d = ImageDraw.Draw(img)
+        for s in self.shapes:
+            tupled = []
+            for pt in self.shapes[s].points:
+                tupled += [tuple(pt)]
+            d.polygon(tupled, fill=colorTranslator[self.shapes[s].color])
+        img.save(filenm+".png",format='png')
+            
     def get_keys(self, e):
         if e.char == 'r':
             self.make_shape("red")
@@ -122,6 +169,10 @@ class Display(Canvas):
         self.root = Tk()
         super().__init__(self.root, width=wid, height=hgt)
         super().pack()
+        self.img = None
+        self.bgImage = None
+        self.width = wid
+        self.height = hgt
         self.verts = []
         self.vert_ids = []
         self.shapes = {}
@@ -133,6 +184,12 @@ class Display(Canvas):
         self.root.bind("<Down>", lambda down: self.move_selected("Down"))
         self.root.bind("<Left>", lambda left: self.move_selected("Left"))
         self.root.bind("<Right>", lambda up: self.move_selected("Right"))
+        menu_bar = Menu(self.root)
+        image_menu = Menu(menu_bar)
+        menu_bar.add_cascade(label="Image", menu=image_menu)
+        image_menu.add_command(label="Background Image", command=self.addbgImage)
+        image_menu.add_command(label="Export", command=self.export_image)
+        self.root.config(menu=menu_bar)
         self.root.mainloop()
 
 class Shape:
